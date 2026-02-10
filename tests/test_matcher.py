@@ -2,11 +2,11 @@ from chapter_extractor.models import Chapter, EpisodeInfo
 from chapter_extractor.matcher import filter_chapters, CHAPTER_NAME_KEYWORDS
 
 
-def _ch(duration: float, title: str | None = None, season: int = 1, episode: int = 1) -> Chapter:
+def _ch(duration: float, title: str | None = None, season: int = 1, episode: int = 1, start: float = 0.0) -> Chapter:
     """Helper to create test chapters."""
     return Chapter(
-        start=0.0,
-        end=duration,
+        start=start,
+        end=start + duration,
         duration=duration,
         title=title,
         source_file=f"/fake/Show S{season:02d}E{episode:02d}.mkv",
@@ -176,3 +176,62 @@ def test_contiguity_small_gap_tolerated():
     result = split_by_contiguity(chapters)
     assert len(result) == 1
     assert len(result[0]) == 4
+
+
+from chapter_extractor.matcher import split_duplicate_episodes
+
+
+def test_split_dupes_no_duplicates():
+    """Cluster with one chapter per episode is returned as-is."""
+    chapters = [_ch(16, "Chapter 05", season=1, episode=i) for i in range(1, 6)]
+    result = split_duplicate_episodes(chapters)
+    assert len(result) == 1
+    assert len(result[0]) == 5
+
+
+def test_split_dupes_by_title():
+    """Two different chapters per episode with different titles get split."""
+    chapters = [
+        _ch(16, "Chapter 05", season=1, episode=1, start=1350),
+        _ch(15, "Chapter 06", season=1, episode=1, start=1370),
+        _ch(16, "Chapter 05", season=1, episode=2, start=1350),
+        _ch(15, "Chapter 06", season=1, episode=2, start=1370),
+        _ch(16, "Chapter 05", season=1, episode=3, start=1350),
+        _ch(15, "Chapter 06", season=1, episode=3, start=1370),
+    ]
+    result = split_duplicate_episodes(chapters)
+    assert len(result) == 2
+    # Each sub-cluster has 3 chapters (one per episode)
+    assert all(len(c) == 3 for c in result)
+    # Each sub-cluster has unique titles
+    titles = [{ch.title for ch in c} for c in result]
+    assert {"Chapter 05"} in titles
+    assert {"Chapter 06"} in titles
+
+
+def test_split_dupes_by_start_time():
+    """Same title but different positions get split by start time."""
+    chapters = [
+        _ch(16, None, season=1, episode=1, start=0),
+        _ch(15, None, season=1, episode=1, start=1350),
+        _ch(16, None, season=1, episode=2, start=0),
+        _ch(15, None, season=1, episode=2, start=1350),
+    ]
+    result = split_duplicate_episodes(chapters)
+    assert len(result) == 2
+    assert all(len(c) == 2 for c in result)
+
+
+def test_split_dupes_no_episode_info():
+    """Without episode info, uses source_file to detect duplicates."""
+    ch1 = Chapter(start=0, end=16, duration=16, title="A", source_file="/a.mkv", episode=None)
+    ch2 = Chapter(start=1350, end=1366, duration=16, title="B", source_file="/a.mkv", episode=None)
+    ch3 = Chapter(start=0, end=16, duration=16, title="A", source_file="/b.mkv", episode=None)
+    ch4 = Chapter(start=1350, end=1366, duration=16, title="B", source_file="/b.mkv", episode=None)
+    result = split_duplicate_episodes([ch1, ch2, ch3, ch4])
+    assert len(result) == 2
+
+
+def test_split_dupes_empty():
+    result = split_duplicate_episodes([])
+    assert result == []

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 from chapter_extractor.models import Chapter, EpisodeInfo
 
@@ -64,6 +65,47 @@ def cluster_by_duration(
             clusters.append([chapter])
 
     return clusters
+
+
+def split_duplicate_episodes(cluster: list[Chapter]) -> list[list[Chapter]]:
+    """Split a duration cluster so each episode/file appears at most once per sub-cluster.
+
+    When multiple chapters from the same episode have similar durations, they end up
+    in the same cluster. This splits them by title first, then by start time proximity.
+    """
+    if not cluster:
+        return []
+
+    def _source_key(c: Chapter) -> tuple[int, int] | str:
+        if c.episode:
+            return (c.episode.season, c.episode.episode)
+        return c.source_file
+
+    counts = Counter(_source_key(c) for c in cluster)
+    if max(counts.values()) <= 1:
+        return [cluster]
+
+    # Split by title
+    by_title: dict[str, list[Chapter]] = {}
+    for ch in cluster:
+        key = ch.title or ""
+        by_title.setdefault(key, []).append(ch)
+
+    if len(by_title) > 1:
+        return list(by_title.values())
+
+    # Fallback: split by start time proximity (120s tolerance)
+    sorted_by_start = sorted(cluster, key=lambda c: c.start)
+    sub_clusters: list[list[Chapter]] = [[sorted_by_start[0]]]
+
+    for ch in sorted_by_start[1:]:
+        prev = sub_clusters[-1][-1]
+        if abs(ch.start - prev.start) <= 120:
+            sub_clusters[-1].append(ch)
+        else:
+            sub_clusters.append([ch])
+
+    return sub_clusters
 
 
 _MAX_EPISODE_GAP = 3

@@ -11,6 +11,7 @@ from chapter_extractor.matcher import (
     cluster_by_duration,
     filter_chapters,
     split_by_contiguity,
+    split_duplicate_episodes,
 )
 from chapter_extractor.models import Chapter, ChapterPattern
 from chapter_extractor.naming import (
@@ -222,6 +223,12 @@ def run(args: argparse.Namespace) -> int:
     # Step 4: Group
     if args.min_occurrences > 0:
         clusters = cluster_by_duration(filtered, args.tolerance_seconds, args.tolerance_percent)
+
+        # Split clusters where the same episode appears multiple times
+        deduped: list[list[Chapter]] = []
+        for cluster in clusters:
+            deduped.extend(split_duplicate_episodes(cluster))
+        clusters = deduped
 
         if args.episode_parsing:
             split_clusters: list[list[Chapter]] = []
