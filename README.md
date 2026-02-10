@@ -1,5 +1,9 @@
 # chapter-extractor
 
+> [!NOTE]  
+> This tool was at least 99% written by AI. Altough I have tested it and it seems to work as it should, use with care and expect things to go really wrong.
+
+
 Extract recurring chapter segments (intros, outros, etc.) from large MKV collections by analyzing chapter marker patterns.
 
 Point it at a directory of MKV files and it will find chapters that repeat across episodes with similar durations -- typically intros and outros. It extracts the video segment from the first occurrence and names the output by the episode range it covers.
