@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "chapter-extractor"
+version = "0.1.0"
+description = "Extract recurring chapter segments from MKV collections"
+requires-python = ">=3.12"
+
+[project.scripts]
+chapter-extractor = "chapter_extractor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
