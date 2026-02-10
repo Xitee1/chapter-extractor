@@ -135,6 +135,12 @@ def _build_patterns(
             first_occurrence=first,
             output_name=output_name,
         ))
+
+    # Sort by first occurrence episode, then by start time within that episode
+    patterns.sort(key=lambda p: (
+        (p.first_occurrence.episode.season, p.first_occurrence.episode.episode) if p.first_occurrence.episode else (0, 0),
+        p.first_occurrence.start,
+    ))
     return patterns
 
 
