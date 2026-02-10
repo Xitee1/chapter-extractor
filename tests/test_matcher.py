@@ -69,3 +69,40 @@ def test_filter_chapter_name_case_insensitive():
     chapters = [_ch(90, "opening"), _ch(90, "INTRO"), _ch(90, "Ending")]
     result = filter_chapters(chapters, duration_range=None, chapter_names=True)
     assert len(result) == 3
+
+
+from chapter_extractor.matcher import cluster_by_duration
+
+
+def test_cluster_by_seconds_tolerance():
+    chapters = [_ch(90, episode=1), _ch(91, episode=2), _ch(92, episode=3), _ch(120, episode=4), _ch(121, episode=5)]
+    clusters = cluster_by_duration(chapters, tolerance_seconds=2, tolerance_percent=None)
+    assert len(clusters) == 2
+    assert len(clusters[0]) == 3
+    assert len(clusters[1]) == 2
+
+
+def test_cluster_by_percent_tolerance():
+    chapters = [_ch(100, episode=1), _ch(105, episode=2), _ch(200, episode=3), _ch(210, episode=4)]
+    clusters = cluster_by_duration(chapters, tolerance_seconds=None, tolerance_percent=5)
+    assert len(clusters) == 2
+
+
+def test_cluster_single_chapter():
+    chapters = [_ch(90)]
+    clusters = cluster_by_duration(chapters, tolerance_seconds=2, tolerance_percent=None)
+    assert len(clusters) == 1
+    assert len(clusters[0]) == 1
+
+
+def test_cluster_all_same_duration():
+    chapters = [_ch(90, episode=i) for i in range(10)]
+    clusters = cluster_by_duration(chapters, tolerance_seconds=2, tolerance_percent=None)
+    assert len(clusters) == 1
+    assert len(clusters[0]) == 10
+
+
+def test_cluster_all_different():
+    chapters = [_ch(60), _ch(120), _ch(180), _ch(240)]
+    clusters = cluster_by_duration(chapters, tolerance_seconds=2, tolerance_percent=None)
+    assert len(clusters) == 4

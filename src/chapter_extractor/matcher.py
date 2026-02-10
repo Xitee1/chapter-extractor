@@ -38,3 +38,29 @@ def filter_chapters(
         result = [c for c in result if c.title and _matches_chapter_name(c.title)]
 
     return result
+
+
+def cluster_by_duration(
+    chapters: list[Chapter],
+    tolerance_seconds: float | None,
+    tolerance_percent: float | None,
+) -> list[list[Chapter]]:
+    """Group chapters with similar durations using single-linkage clustering."""
+    if not chapters:
+        return []
+
+    sorted_chapters = sorted(chapters, key=lambda c: c.duration)
+    clusters: list[list[Chapter]] = [[sorted_chapters[0]]]
+
+    for chapter in sorted_chapters[1:]:
+        prev = clusters[-1][-1]
+        if tolerance_seconds is not None:
+            similar = abs(chapter.duration - prev.duration) <= tolerance_seconds
+        else:
+            similar = abs(chapter.duration - prev.duration) / prev.duration * 100 <= tolerance_percent
+        if similar:
+            clusters[-1].append(chapter)
+        else:
+            clusters.append([chapter])
+
+    return clusters
