@@ -15,12 +15,6 @@ Point it at a directory of MKV files and it will find chapters that repeat acros
 pip install -e .
 ```
 
-Or run directly:
-
-```bash
-PYTHONPATH=src python -m chapter_extractor
-```
-
 ## Usage
 
 ```
