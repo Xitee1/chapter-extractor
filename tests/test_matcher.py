@@ -135,6 +135,7 @@ def test_contiguity_gap_in_season():
 
 
 def test_contiguity_cross_season():
+    """Season boundaries always split clusters."""
     chapters = [
         _ch(90, season=1, episode=11),
         _ch(90, season=1, episode=12),
@@ -142,8 +143,9 @@ def test_contiguity_cross_season():
         _ch(90, season=2, episode=2),
     ]
     result = split_by_contiguity(chapters)
-    assert len(result) == 1
-    assert len(result[0]) == 4
+    assert len(result) == 2
+    assert len(result[0]) == 2
+    assert len(result[1]) == 2
 
 
 def test_contiguity_season_gap():

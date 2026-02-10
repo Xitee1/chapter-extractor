@@ -112,12 +112,10 @@ _MAX_EPISODE_GAP = 3
 
 
 def _are_adjacent(a: EpisodeInfo, b: EpisodeInfo) -> bool:
-    """Check if two episodes are adjacent (allowing small gaps)."""
-    if a.season == b.season:
-        return abs(b.episode - a.episode) <= _MAX_EPISODE_GAP
-    if abs(b.season - a.season) == 1:
-        return True
-    return False
+    """Check if two episodes are adjacent (allowing small gaps within a season)."""
+    if a.season != b.season:
+        return False
+    return abs(b.episode - a.episode) <= _MAX_EPISODE_GAP
 
 
 def split_by_contiguity(chapters: list[Chapter]) -> list[list[Chapter]]:
