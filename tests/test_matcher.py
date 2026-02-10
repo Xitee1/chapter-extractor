@@ -106,3 +106,73 @@ def test_cluster_all_different():
     chapters = [_ch(60), _ch(120), _ch(180), _ch(240)]
     clusters = cluster_by_duration(chapters, tolerance_seconds=2, tolerance_percent=None)
     assert len(clusters) == 4
+
+
+from chapter_extractor.matcher import split_by_contiguity
+from chapter_extractor.models import Chapter
+
+
+def test_contiguity_all_contiguous():
+    chapters = [_ch(90, episode=i, season=1) for i in range(1, 13)]
+    result = split_by_contiguity(chapters)
+    assert len(result) == 1
+    assert len(result[0]) == 12
+
+
+def test_contiguity_gap_in_season():
+    chapters = [
+        _ch(90, season=1, episode=1),
+        _ch(90, season=1, episode=2),
+        _ch(90, season=1, episode=3),
+        # gap: 4-7 missing
+        _ch(90, season=1, episode=8),
+        _ch(90, season=1, episode=9),
+    ]
+    result = split_by_contiguity(chapters)
+    assert len(result) == 2
+    assert len(result[0]) == 3
+    assert len(result[1]) == 2
+
+
+def test_contiguity_cross_season():
+    chapters = [
+        _ch(90, season=1, episode=11),
+        _ch(90, season=1, episode=12),
+        _ch(90, season=2, episode=1),
+        _ch(90, season=2, episode=2),
+    ]
+    result = split_by_contiguity(chapters)
+    assert len(result) == 1
+    assert len(result[0]) == 4
+
+
+def test_contiguity_season_gap():
+    chapters = [
+        _ch(90, season=1, episode=1),
+        _ch(90, season=1, episode=2),
+        _ch(90, season=3, episode=1),
+        _ch(90, season=3, episode=2),
+    ]
+    result = split_by_contiguity(chapters)
+    assert len(result) == 2
+
+
+def test_contiguity_no_episode_info():
+    ch1 = Chapter(start=0, end=90, duration=90, title=None, source_file="/a.mkv", episode=None)
+    ch2 = Chapter(start=0, end=90, duration=90, title=None, source_file="/b.mkv", episode=None)
+    result = split_by_contiguity([ch1, ch2])
+    assert len(result) == 1
+    assert len(result[0]) == 2
+
+
+def test_contiguity_small_gap_tolerated():
+    """Gaps of up to 3 episodes within a season are tolerated."""
+    chapters = [
+        _ch(90, season=1, episode=1),
+        _ch(90, season=1, episode=2),
+        _ch(90, season=1, episode=5),
+        _ch(90, season=1, episode=6),
+    ]
+    result = split_by_contiguity(chapters)
+    assert len(result) == 1
+    assert len(result[0]) == 4

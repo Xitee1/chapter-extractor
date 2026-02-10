@@ -64,3 +64,36 @@ def cluster_by_duration(
             clusters.append([chapter])
 
     return clusters
+
+
+_MAX_EPISODE_GAP = 3
+
+
+def _are_adjacent(a: EpisodeInfo, b: EpisodeInfo) -> bool:
+    """Check if two episodes are adjacent (allowing small gaps)."""
+    if a.season == b.season:
+        return abs(b.episode - a.episode) <= _MAX_EPISODE_GAP
+    if abs(b.season - a.season) == 1:
+        return True
+    return False
+
+
+def split_by_contiguity(chapters: list[Chapter]) -> list[list[Chapter]]:
+    """Split a cluster into sub-clusters of contiguous episode runs."""
+    if not chapters:
+        return []
+
+    if any(c.episode is None for c in chapters):
+        return [chapters]
+
+    sorted_chapters = sorted(chapters, key=lambda c: (c.episode.season, c.episode.episode))
+    runs: list[list[Chapter]] = [[sorted_chapters[0]]]
+
+    for chapter in sorted_chapters[1:]:
+        prev = runs[-1][-1]
+        if _are_adjacent(prev.episode, chapter.episode):
+            runs[-1].append(chapter)
+        else:
+            runs.append([chapter])
+
+    return runs
