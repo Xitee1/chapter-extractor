@@ -1,7 +1,7 @@
 # chapter-extractor
 
 > [!NOTE]  
-> This tool was at least 99% written by AI. Altough I have tested it and it seems to work as it should, use with care and expect things to go really wrong.
+> Archived: New tool available at https://github.com/Xitee1/opening-ending-extractor
 
 
 Extract recurring chapter segments (intros, outros, etc.) from large MKV collections by analyzing chapter marker patterns.
